@@ -1,9 +1,13 @@
-
+# SignedInt takes two parameters as input. First it takes an int which represents the value and a boolean which
+# represents weather or not the value is barred. Values should always be positive and nonzero.
+# In this system 1 < 2 < ... < n < nbar < n-1bar < ... < 2bar < 1bar
 class SignedInt:
     def __init__(self, val, bar):
         self.val = val
         self.bar = bar
 
+    # This property is invoked any time two signed ints are compared. The property returns an int which can then
+    # be compared with the normal <, >, <=, >= operators.
     @property
     def comparisonVal(self):
         sign = -1 if self.bar else 1
@@ -42,6 +46,7 @@ class SignedInt:
         b = other.comparisonVal
         return a >= b
 
+    # Returns latex code to represent the number.
     def __str__(self):
         if self.bar:
             return f"\\bar{{{str(self.val)}}}"
@@ -51,7 +56,8 @@ class SignedInt:
     def __repr__(self):
         return f"SignedInt({self.val}, {self.bar})"
 
-
+# Points are as  a 3 element list of SignedInts representing the point itself and a list of reflected points.
+# Currently, the list of reflected points is unused however it may be used in the future.
 class Point:
     def __init__(self, a, b, c, reflectedPoints=None):
         if reflectedPoints is None:
@@ -59,7 +65,6 @@ class Point:
         else:
             self.reflectedPoints = reflectedPoints
         self.pointList = [a, b, c]
-
 
     def __eq__(self, other):
         return self.pointList == other.pointList
@@ -115,6 +120,10 @@ class Point:
 
         return "".join(TeX)
 
+    # This property is invoked every time a comparision is made betweeen two points.
+    # This property outputs a list of length 6. The first element is the first element, of the point.
+    # The next two elements are the min and max of the first two elements of the point respectively
+    # And the final three elements are the ordering of all the elements of the points.
     @property
     def comparisonArray(self):
         output = []
@@ -163,6 +172,10 @@ class Reflection:
         expression = f"t_{self.i} - t_{self.j if self.j != 0 else 'k'}"
         return f"\\xrightarrow{{{expression}}}"
 
+    # This method is called whenever a t_i - t_k reflection is executued. This method takes in a point and the
+    # (0 based!) index of the value that is to be reflected and identifies the value such that the resultant point is
+    # maximal. Currently, this method only works for (x, y, 1) reelections and will always return either
+    # 4bar, 3bar, or 2bar.
     @staticmethod
     def __findX(point, xLocation):
         blacklist = []
