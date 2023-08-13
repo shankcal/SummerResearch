@@ -52,7 +52,7 @@ for item in notComparible:
     numbersUsed = []
 
     # All points
-    f.write(f"{item[0]} <> {item[1]} \n")
+    # f.write(f"{item[0]} <> {item[1]} \n")
 
     # Points with no common values
     # for val in numberPool:
@@ -61,6 +61,11 @@ for item in notComparible:
     #
     # if numbersUsed == numberPool:
     #     f.write(f"{item[0]} <> {item[1]} \n")
+
+    # points begining with 1
+    if item[0][0] == 1 and item[1][0] == 1:
+        f.write(f"{item[0]} <> {item[1]} \n")
+
 
 
 

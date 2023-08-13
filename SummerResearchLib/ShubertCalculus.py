@@ -1,10 +1,24 @@
 # SignedInt takes two parameters as input. First it takes an int which represents the value and a boolean which
 # represents weather or not the value is barred. Values should always be positive and nonzero.
 # In this system 1 < 2 < ... < n < nbar < n-1bar < ... < 2bar < 1bar
+import re
+
+
 class SignedInt:
     def __init__(self, val, bar):
         self.val = val
         self.bar = bar
+
+    @classmethod
+    def fromString(cls, string):
+        if string.endswith("bar"):
+            val = int(string.rstrip("bar"))
+            bar = True
+        else:
+            val = int(string)
+            bar = False
+        return cls(val, bar)
+
 
     # This property is invoked any time two signed ints are compared. The property returns an int which can then
     # be compared with the normal <, >, <=, >= operators.
@@ -107,6 +121,20 @@ class Point:
     def __repr__(self):
         return f"Point({self.pointList[0]}, {self.pointList[1]}, {self.pointList[2]}, reflectedPoints={self.reflectedPoints})"
 
+    @classmethod
+    def fromString(cls, string):
+        pattern = r'^\(\s*\w(bar)?\s*\|\s*\w(bar)?\s*\|\s*\w(bar)?\s*\)$'
+        match = re.match(pattern, string)
+
+        if match:
+            pointString = string.replace("(", "").replace(")", "")
+            pointListStr = pointString.split("|")
+            pointList = []
+            for val in pointListStr:
+                pointList.append(SignedInt.fromString(val.strip()))
+            return cls(pointList[0], pointList[1], pointList[2])
+        else:
+            raise ValueError("Invalid input")
     def toTeX(self):
         TeX = []
         TeX.append(" ( ")
