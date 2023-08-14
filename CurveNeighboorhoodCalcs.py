@@ -9,7 +9,7 @@ b1 = SignedInt(1, True)
 b2 = SignedInt(2, True)
 b3 = SignedInt(3, True)
 
-point1 = Point.fromString("(2 | 3 | 1  )")
+point1 = Point.fromString("(1 | 2 | 3  )")
 
 t1t2 = Reflection(1, 2)  # t_1 - t_2
 t1t3 = Reflection(1, 3)  # t_1 - t_3
@@ -87,10 +87,3 @@ f.writelines([point.toTeX() + "\n" for point in maximalPoints])
 
 f.close()
 
-test = ReflectionCalculator((1,1,2))
-
-items = test.reflectionList
-for item in items:
-    for reflection in item:
-        print(reflection.toTeX())
-    print()
