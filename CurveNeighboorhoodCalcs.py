@@ -84,3 +84,13 @@ f.write("Reflection Calculations: \n")
 f.writelines(resultsTeX)
 f.write("Maximal Points: \n")
 f.writelines([point.toTeX() + "\n" for point in maximalPoints])
+
+f.close()
+
+test = ReflectionCalculator((1,1,2))
+
+items = test.reflectionList
+for item in items:
+    for reflection in item:
+        print(reflection.toTeX())
+    print()

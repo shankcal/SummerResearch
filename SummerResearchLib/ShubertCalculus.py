@@ -1,6 +1,7 @@
 # SignedInt takes two parameters as input. First it takes an int which represents the value and a boolean which
 # represents weather or not the value is barred. Values should always be positive and nonzero.
 # In this system 1 < 2 < ... < n < nbar < n-1bar < ... < 2bar < 1bar
+import itertools
 import re
 
 
@@ -18,7 +19,6 @@ class SignedInt:
             val = int(string)
             bar = False
         return cls(val, bar)
-
 
     # This property is invoked any time two signed ints are compared. The property returns an int which can then
     # be compared with the normal <, >, <=, >= operators.
@@ -69,6 +69,7 @@ class SignedInt:
 
     def __repr__(self):
         return f"SignedInt({self.val}, {self.bar})"
+
 
 # Points are as  a 3 element list of SignedInts representing the point itself and a list of reflected points.
 # Currently, the list of reflected points is unused however it may be used in the future.
@@ -135,6 +136,7 @@ class Point:
             return cls(pointList[0], pointList[1], pointList[2])
         else:
             raise ValueError("Invalid input")
+
     def toTeX(self):
         TeX = []
         TeX.append(" ( ")
@@ -196,6 +198,30 @@ class Reflection:
         self.i = i
         self.j = j
 
+    @classmethod
+    def fromTuple(cls, reflectionTuple):
+
+        match reflectionTuple:
+            case (1, 0, 0):
+                i, j = 1, 2
+            case (1, 1, 0):
+                i, j = 1, 3
+            case (0, 0, 1):
+                i, j = 2, 3
+            case (0, 1, 0):
+                i, j = 2, 3
+            case (1, 1, 1):
+                i, j = 1, 0
+            case (0, 1, 1):
+                i, j = 2, 0
+            case (0, 0, 1):
+                i, j = 3, 0
+            case _:
+                print(reflectionTuple)
+                raise NotImplementedError("Invalid Tuple")
+
+        return cls(i, j)
+
     def toTeX(self):
         expression = f"t_{self.i} - t_{self.j if self.j != 0 else 'k'}"
         return f"\\xrightarrow{{{expression}}}"
@@ -238,3 +264,48 @@ class Reflection:
             point.pointList[y] = temp
 
         return
+
+
+class ReflectionCalculator:
+    allowedDegrees = ((1, 0, 0), (0, 1, 0), (0, 0, 1), (1, 1, 0), (0, 1, 1), (1, 1, 1), (1, 1, 2))
+
+    def __init__(self, degree):
+        if degree in ReflectionCalculator.allowedDegrees:
+            self.degree = degree
+            self.reflectionList = self.__getReflectionCombinations()
+        else:
+            raise NotImplementedError("This Reflection is not supported")
+
+    def __getReflectionCombinations(self):
+        def permsOf(*args):
+            return tuple(itertools.permutations(args))
+
+        def r(a, b, c):
+            return Reflection.fromTuple((a, b, c))
+
+        reflectionsequences = []
+        match self.degree:
+            case (1, 0, 0):
+                reflectionsequences.append((r(1, 0, 0),))
+            case (0, 1, 0):
+                reflectionsequences.append((r(0, 1, 0),))
+            case (0, 0, 1):
+                reflectionsequences.append((r(0, 0, 1),))
+            case (1, 1, 0):
+                reflectionsequences.append((r(1, 1, 0),))
+                reflectionsequences.extend(permsOf(r(1, 0, 0), r(0, 1, 0)))
+            case (0, 1, 1):
+                reflectionsequences.append((r(0, 1, 1),))
+                reflectionsequences.extend(permsOf(r(0, 1, 0), r(0, 0, 1)))
+            case (1, 1, 1):
+                reflectionsequences.append((r(1, 1, 1),))
+                reflectionsequences.extend(permsOf(r(1, 1, 0), r(0, 0, 1)))
+                reflectionsequences.extend(permsOf(r(1, 0, 0), r(0, 1, 1)))
+                reflectionsequences.extend(permsOf(r(1, 0, 0), r(0, 1, 0), r(0, 0, 1)))
+            case (1, 1, 2):
+                reflectionsequences.extend(permsOf(r(1, 1, 1), r(0, 0, 1)))
+                reflectionsequences.extend(permsOf(r(1, 1, 0), r(0, 0, 1), r(0, 0, 1)))
+                reflectionsequences.extend(permsOf(r(0, 1, 1), r(1, 0, 0), r(0, 0, 1)))
+                reflectionsequences.extend(permsOf(r(1, 0, 0), r(0, 1, 0), r(0, 0, 1), r(0, 0, 1)))
+
+        return reflectionsequences
