@@ -174,8 +174,16 @@ class Point:
 
         return output
 
+    @property
+    def indeterminateValsCount(self):
+        count = 0
+        for val in self.pointList:
+            if isinstance(val, str):
+                count += 1
+        return count
+
     def makeDeterminant(self):
-        if self.reflectedPointsCount == 0:
+        if self.indeterminateValsCount == 0:
             return
         indeterminateLocations = []
         for i in range(3):
@@ -190,15 +198,16 @@ class Point:
 
         possibleVals = [SignedInt(2, True), SignedInt(3, True), SignedInt(4, True)]
 
-        if self.reflectedPointsCount == 1:
+        if self.indeterminateValsCount == 1:
             i = 0
             for val in possibleVals:
                 if val in blacklist:
                     continue
                 else:
                     self.pointList[indeterminateLocations[i]] = val
+                    break
 
-        elif self.reflectedPointsCount == 2:
+        elif self.indeterminateValsCount == 2:
             i = 0
             for val in possibleVals:
                 if val in blacklist:
@@ -206,6 +215,8 @@ class Point:
                 else:
                     self.pointList[indeterminateLocations[i]] = val
                     i += 1
+                    if i == 2:
+                        break
 
         self.determinant = True
         return
@@ -230,7 +241,7 @@ class Reflection:
             case (1, 1, 0):
                 i, j = 1, 3
             case (0, 0, 1):
-                i, j = 2, 3
+                i, j = 3, 0
             case (0, 1, 0):
                 i, j = 2, 3
             case (1, 1, 1):
@@ -257,10 +268,10 @@ class Reflection:
         y = self.j - 1
 
         if self.j == 0:
-            xVal = "x" if point.reflectedPointsCount == 1 else "y"
+            # 1 is added because the count is about to increase by 1
+            xVal = "x" if point.indeterminateValsCount + 1 == 1 else "y"
             point.pointList[x] = xVal
             point.determinant = False
-            point.reflectedPointsCount += 1
         else:
             temp = point.pointList[x]
             point.pointList[x] = point.pointList[y]
@@ -343,7 +354,8 @@ class ReflectionCalculator:
             point.makeDeterminant()
             TeX.append(point.toTeX())
             TeX.append(r"\]")
-            newPoints.append(point)
+            if point not in newPoints:
+                newPoints.append(point)
             self.log.append("".join(TeX))
         self.log.setPoints(newPoints)
         return
