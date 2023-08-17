@@ -328,7 +328,7 @@ class ReflectionCalculator:
 
     def applyReflections(self, verbose=0):
         self.log.append(f"Applying Reflections to ${self.point.toTeX()}$ :")
-        self.log.append("\n")
+        self.log.append("")
         points = []
         for reflectionSequence in self.reflectionList:
             pointCopy = copy.deepcopy(self.point)
@@ -340,13 +340,14 @@ class ReflectionCalculator:
             points.append(pointCopy)
             TeX.append(r"\]")
             self.log.append("".join(TeX))
-
+        self.log.append("")
         self.log.setPoints(points)
+
         return
 
     def makePointsDeterminant(self, verbose=0):
         self.log.append("Solving for x,y, and z:")
-        self.log.append("\n")
+        self.log.append("")
         points = self.log.getPoints()
         newPoints = []
         for point in points:
@@ -357,13 +358,14 @@ class ReflectionCalculator:
             if point not in newPoints:
                 newPoints.append(point)
             self.log.append("".join(TeX))
+        self.log.append("")
         self.log.setPoints(newPoints)
         return
 
 
     def findMaximalPoints(self, verbose=0):
         self.log.append("Found Maximal Points:")
-        self.log.append("\n")
+        self.log.append("")
         points = self.log.getPoints()
         newPoints = []
         for maximalPointCandidate in points:
@@ -398,10 +400,10 @@ class CalculationResult:
         return self.points
 
     def getLog(self):
-        return "\n".join(self.log)
+        return "".join(self.log)
 
     def append(self, message):
-        self.log.append(message)
+        self.log.append(message + "\n")
         return
     def setPoints(self, points):
         self.points = points
