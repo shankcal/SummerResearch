@@ -1,7 +1,24 @@
 import itertools
 from SummerResearchLib.ShubertCalculus import *
 
-# Key takeaway: Any point with 2 indeterminate values has exactly one maximal
+# Key takeaway: Any point with 2 indeterminate values of the form (a|x|y), (x|a|y), or (x|y|a) where a is in
+# {1,2,3,...,3bar,2bar} has exactly one solution
+
+# Solutions:
+# a in {1, 4, 5, 6,..., 4bar}:
+# (a|x|y) -> (a|2bar|3bar)
+# (x|a|y) -> (2bar|a|3bar)
+# (x|y|a) -> (2bar|3bar|a)
+
+# a in {3, 3bar}:
+# (a|x|y) -> (a|2bar|4bar)
+# (x|a|y) -> (2bar|a|4bar)
+# (x|y|a) -> (2bar|4bar|a)
+
+# a in {2, 2bar}
+# (a|x|y) -> (a|3bar|4bar)
+# (x|a|y) -> (3bar|a|4bar)
+# (x|y|a) -> (3bar|4bar|a)
 
 def create_1_X_Y_points(default):
     pointList = []
@@ -45,9 +62,9 @@ def findMaximalPoints(pointList):
 
     return maximalPoints
 
-numberPool = [SignedInt(6, True), SignedInt(4, True), SignedInt(3, True), SignedInt(2, True)]
+numberPool = [SignedInt(6, True), SignedInt(5, True), SignedInt(4, True), SignedInt(3, True)]
 
-defaultNum = SignedInt(5, True)
+defaultNum = SignedInt(2, True)
 
 list1 = create_1_X_Y_points(defaultNum)
 maximalList1 = findMaximalPoints(list1)
