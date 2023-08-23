@@ -189,7 +189,7 @@ class Point:
         for i in range(3):
             if isinstance(self.pointList[i], str):
                 indeterminateLocations.append(i)
-        blacklist = []
+        blacklist = [] # Blacklist needs to be for each reflected Point
         for i in range(3):
             if i in indeterminateLocations:
                 continue
@@ -207,7 +207,7 @@ class Point:
                     self.pointList[indeterminateLocations[i]] = val
                     break
 
-        elif self.indeterminateValsCount == 2:
+        elif self.indeterminateValsCount == 2: # This will not work
             i = 0
             for val in possibleVals:
                 if val in blacklist:
