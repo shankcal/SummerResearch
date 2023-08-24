@@ -1,7 +1,7 @@
 from SummerResearchLib.ShubertCalculus import *
 
 
-f = open("CurveNeighboorhoodCalcsOutput2.txt", "w")
+f = open("Calc2Output.txt", "w")
 
 point = Point.fromString("(1|2|3)")
 calculator = ReflectionCalculator((1, 1, 2), point)
