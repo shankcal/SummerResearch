@@ -273,14 +273,15 @@ class Reflection:
 
 class ReflectionCalculator:
 
-    def __init__(self, n):
+    def __init__(self, n, verbosity=2):
+        self.verbosity = verbosity
         self.degree = n
         self.reflectionList = self.__getReflectionCombinations()
         vals = []
         for i in range(1, n+1):
             vals.append(SignedInt(i, False))
         self.point = Point(*vals)
-        self.log = CalculationResult()
+        self.log = CalculationResult(verbosity=verbosity)
 
     def __getReflectionCombinations(self):
         def __getComps(n):
@@ -316,8 +317,8 @@ class ReflectionCalculator:
             reflectionSequences.extend(list(itertools.permutations(reflectionSequence)))
         return reflectionSequences
 
-    def applyReflections(self, verbose=0):
-        self.log.append(f"Applying Reflections to ${self.point.toTeX()}$ :")
+    def applyReflections(self):
+        self.log.append(f"Applying (1, 1, ...) Reflections to ${self.point.toTeX()}$ :")
         self.log.append("")
         points = []
         for reflectionSequence in self.reflectionList:
@@ -329,13 +330,15 @@ class ReflectionCalculator:
                 TeX.append(pointCopy.toTeX())
             points.append(pointCopy)
             TeX.append(r"\]")
-            self.log.append("".join(TeX))
+            self.log.appendIf("".join(TeX), 2)
         self.log.append("")
+        self.log.append(f"Finished applying reflections")
+        self.log.append(f"Total reflection sequences applied: {len(self.reflectionList)}")
         self.log.setPoints(points)
 
         return
 
-    def makePointsDeterminant(self, verbose=0):
+    def makePointsDeterminant(self):
         self.log.append("Solving for x, y, and z:")
         self.log.append("")
         points = self.log.getPoints()
@@ -347,17 +350,16 @@ class ReflectionCalculator:
             TeX.append(r"\]")
             if point not in newPoints:
                 newPoints.append(point)
-            self.log.append("".join(TeX))
+            self.log.appendIf("".join(TeX), 1)
+        self.log.append("Finished Solving")
         self.log.append("")
         self.log.setPoints(newPoints)
         return
 
 
-    def findMaximalPoints(self, verbose=0):
-        self.log.append("Found Maximal Points:")
-        self.log.append("")
+    def findMaximalPoints(self):
         points = self.log.getPoints()
-        newPoints = []
+        maximalPoints = []
         for maximalPointCandidate in points:
             foundGreaterPoint = False
 
@@ -367,24 +369,29 @@ class ReflectionCalculator:
                     break
 
             if not foundGreaterPoint:
-                newPoints.append(maximalPointCandidate)
-                self.log.append(fr"\[ {maximalPointCandidate.toTeX()} \]")
+                maximalPoints.append(maximalPointCandidate)
 
-        self.log.setPoints(newPoints)
+        self.log.append(f"Found {len(maximalPoints)} Maximal Points:")
+        self.log.append("")
+        for point in maximalPoints:
+            self.log.append(fr"\[ {point.toTeX()} \]")
+        self.log.setPoints(maximalPoints)
         return
 
-    def calculateAll(self, verbose=0):
-        self.applyReflections(verbose=verbose)
-        self.makePointsDeterminant(verbose=verbose)
-        self.findMaximalPoints(verbose=verbose)
+    def calculateAll(self):
+        self.applyReflections()
+        self.makePointsDeterminant()
+        self.findMaximalPoints()
         return self.log.getLog()
 
 
 
 class CalculationResult:
-    def __init__(self):
+    def __init__(self, verbosity):
+        self.verbosity = verbosity
         self.points = []
         self.log = []
+
 
     def getPoints(self):
         return self.points
@@ -394,6 +401,12 @@ class CalculationResult:
 
     def append(self, message):
         self.log.append(message + "\n")
+        return
+
+    # This is the same as append, but it only appends the given message if the verbosity is higher than the detail level
+    def appendIf(self, message, detailLevel):
+        if self.verbosity >= detailLevel:
+            self.log.append(message + "\n")
         return
     def setPoints(self, points):
         self.points = points
