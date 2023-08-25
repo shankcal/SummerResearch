@@ -5,6 +5,9 @@ import copy
 import itertools
 import re
 
+class IncompatiblePointOperationError(ValueError):
+    pass
+
 
 class SignedInt:
     def __init__(self, val, bar):
@@ -75,34 +78,35 @@ class SignedInt:
 # Points are as  a 3 element list of SignedInts representing the point itself and a list of reflected points.
 # Currently, the list of reflected points is unused however it may be used in the future.
 class Point:
-    def __init__(self, a, b, c):
+    def __init__(self, *args):
         self.reflectedPointsCount = 0
         self.determinant = True
-        self.pointList = [a, b, c]
+        self.pointList = []
+        for arg in args:
+            self.pointList.append(arg)
 
     def __eq__(self, other):
-        if not (self.determinant and other.determinant):
-            raise NotImplementedError("Error. At least one point is not determinant.")
+        self._checkComparibility(other)
         return self.pointList == other.pointList
 
+    def __len__(self):
+        return len(self.pointList)
+
     def __ne__(self, other):
-        if not (self.determinant and other.determinant):
-            raise NotImplementedError("Error. At least one point is not determinant.")
+        self._checkComparibility(other)
         return self.pointList != other.pointList
 
     def __ge__(self, other):
-        if not (self.determinant and other.determinant):
-            raise NotImplementedError("Error. At least one point is not determinant.")
+        self._checkComparibility(other)
         retVal = True
-        for i in range(6):
+        for i in range(len(self.comparisonArray)):
             if not (self.comparisonArray[i] >= other.comparisonArray[i]):
                 retVal = False
                 break
         return retVal
 
     def __le__(self, other):
-        if not (self.determinant and other.determinant):
-            raise NotImplementedError("Error. At least one point is not determinant.")
+        self._checkComparibility(other)
         retVal = True
         for i in range(6):
             if not (self.comparisonArray[i] <= other.comparisonArray[i]):
@@ -111,31 +115,39 @@ class Point:
         return retVal
 
     def __gt__(self, other):
-        if not (self.determinant and other.determinant):
-            raise NotImplementedError("Error. At least one point is not determinant.")
+        self._checkComparibility(other)
         retVal = True
-        for i in range(6):
+        for i in range(len(self.comparisonArray)):
             if not (self.comparisonArray[i] >= other.comparisonArray[i]):
                 retVal = False
                 break
         return (retVal and self != other)
 
     def __lt__(self, other):
-        if not (self.determinant and other.determinant):
-            raise NotImplementedError("Error. At least one point is not determinant.")
+        self._checkComparibility(other)
         retVal = True
-        for i in range(6):
+        for i in range(len(self.comparisonArray)):
             if not (self.comparisonArray[i] <= other.comparisonArray[i]):
                 retVal = False
                 break
         return (retVal and self != other)
 
+    def _checkComparibility(self, other):
+        if len(self) != len(other):
+            raise IncompatiblePointOperationError("Attempting to compare incopatible points."
+                                                  " The lengths of the points must equal.")
+        if not (self.determinant and other.determinant):
+            raise IncompatiblePointOperationError("Attempting to compare incopatible points."
+                                                  " At least one point in indeterminant.")
+        return
+
     def __repr__(self):
-        return f"Point({self.pointList[0]}, {self.pointList[1]}, {self.pointList[2]})"
+        elements = ', '.join(str(element) for element in self.pointList)
+        return f"Point({elements})"
 
     @classmethod
     def fromString(cls, string):
-        pattern = r'^\(\s*\w(bar)?\s*\|\s*\w(bar)?\s*\|\s*\w(bar)?\s*\)$'
+        pattern = r"^\((\s*\d+(bar)?\s*\|)+\s*\d+(bar)?\s*\)$"
         match = re.match(pattern, string)
 
         if match:
@@ -144,7 +156,7 @@ class Point:
             pointList = []
             for val in pointListStr:
                 pointList.append(SignedInt.fromString(val.strip()))
-            return cls(pointList[0], pointList[1], pointList[2])
+            return cls(*pointList)
         else:
             raise ValueError("Invalid input")
 
@@ -154,7 +166,7 @@ class Point:
         for i in range(len(self.pointList)):
             TeX.append(str(self.pointList[i]))
 
-            if (i < 2):
+            if (i < len(self.pointList) - 1):
                 TeX.append(r" \vert ")
             else:
                 TeX.append(" ) ")
@@ -168,10 +180,8 @@ class Point:
     @property
     def comparisonArray(self):
         output = []
-        output.append(self.pointList[0])
-        output.extend(sorted(self.pointList[0:2]))
-        output.extend(sorted(self.pointList[0:3]))
-
+        for i in range(len(self)):
+            output.extend(sorted(self.pointList[0:i+1]))
         return output
 
     @property
@@ -186,17 +196,20 @@ class Point:
         if self.indeterminateValsCount == 0:
             return
         indeterminateLocations = []
-        for i in range(3):
+        for i in range(len(self)):
             if isinstance(self.pointList[i], str):
                 indeterminateLocations.append(i)
         blacklist = [] # Blacklist needs to be for each reflected Point
-        for i in range(3):
+        for i in range(len(self)):
             if i in indeterminateLocations:
                 continue
             blacklist.append(self.pointList[i])
             blacklist.append(-self.pointList[i])
 
-        possibleVals = [SignedInt(2, True), SignedInt(3, True), SignedInt(4, True)]
+        possibleVals = []
+
+        for i in range(2, 2 + len(self) + 1):
+            possibleVals.append(SignedInt(i, True))
 
         if self.indeterminateValsCount == 1:
             i = 0
@@ -232,29 +245,7 @@ class Reflection:
         self.i = i
         self.j = j
 
-    @classmethod
-    def fromTuple(cls, reflectionTuple):
 
-        match reflectionTuple:
-            case (1, 0, 0):
-                i, j = 1, 2
-            case (1, 1, 0):
-                i, j = 1, 3
-            case (0, 0, 1):
-                i, j = 3, 0
-            case (0, 1, 0):
-                i, j = 2, 3
-            case (1, 1, 1):
-                i, j = 1, 0
-            case (0, 1, 1):
-                i, j = 2, 0
-            case (0, 0, 1):
-                i, j = 3, 0
-            case _:
-                print(reflectionTuple)
-                raise NotImplementedError("Invalid Tuple")
-
-        return cls(i, j)
 
     def toTeX(self):
         expression = f"t_{self.i} - t_{self.j if self.j != 0 else 'k'}"
@@ -281,50 +272,49 @@ class Reflection:
 
 
 class ReflectionCalculator:
-    allowedDegrees = ((1, 0, 0), (0, 1, 0), (0, 0, 1), (1, 1, 0), (0, 1, 1), (1, 1, 1), (1, 1, 2))
 
-    def __init__(self, degree, point):
-        if degree in ReflectionCalculator.allowedDegrees:
-            self.degree = degree
-            self.reflectionList = self.__getReflectionCombinations()
-            self.point = point
-            self.log = CalculationResult()
-        else:
-            raise NotImplementedError("This Reflection is not supported")
+    def __init__(self, n):
+        self.degree = n
+        self.reflectionList = self.__getReflectionCombinations()
+        vals = []
+        for i in range(1, n+1):
+            vals.append(SignedInt(i, False))
+        self.point = Point(*vals)
+        self.log = CalculationResult()
 
     def __getReflectionCombinations(self):
-        def permsOf(*args):
-            return tuple(itertools.permutations(args))
+        def __getComps(n):
+            comps = []
+            for num in range(2 ** (n - 1)):  # Generate all the n-1 digit numbers
+                current = []
+                a = 1
+                for i in range(n - 2, -1, -1):  # From left to right loop through each digit
+                    reset = (num >> i) & 1  # get the binary representation of the current digit
+                    if reset:
+                        current.append(a)
+                        a = 1
+                    else:
+                        a += 1
+                current.append(a)
+                comps.append(tuple(current))
 
-        def r(a, b, c):
-            return Reflection.fromTuple((a, b, c))
+            comps.sort(key=len)
+            return comps
 
-        reflectionsequences = []
-        match self.degree:
-            case (1, 0, 0):
-                reflectionsequences.append((r(1, 0, 0),))
-            case (0, 1, 0):
-                reflectionsequences.append((r(0, 1, 0),))
-            case (0, 0, 1):
-                reflectionsequences.append((r(0, 0, 1),))
-            case (1, 1, 0):
-                reflectionsequences.append((r(1, 1, 0),))
-                reflectionsequences.extend(permsOf(r(1, 0, 0), r(0, 1, 0)))
-            case (0, 1, 1):
-                reflectionsequences.append((r(0, 1, 1),))
-                reflectionsequences.extend(permsOf(r(0, 1, 0), r(0, 0, 1)))
-            case (1, 1, 1):
-                reflectionsequences.append((r(1, 1, 1),))
-                reflectionsequences.extend(permsOf(r(1, 1, 0), r(0, 0, 1)))
-                reflectionsequences.extend(permsOf(r(1, 0, 0), r(0, 1, 1)))
-                reflectionsequences.extend(permsOf(r(1, 0, 0), r(0, 1, 0), r(0, 0, 1)))
-            case (1, 1, 2):
-                reflectionsequences.extend(permsOf(r(1, 1, 1), r(0, 0, 1)))
-                reflectionsequences.extend(permsOf(r(1, 1, 0), r(0, 0, 1), r(0, 0, 1)))
-                reflectionsequences.extend(permsOf(r(0, 1, 1), r(1, 0, 0), r(0, 0, 1)))
-                reflectionsequences.extend(permsOf(r(1, 0, 0), r(0, 1, 0), r(0, 0, 1), r(0, 0, 1)))
+        comps = __getComps(self.degree)
 
-        return reflectionsequences
+        reflectionSequences = []
+        for comp in comps:
+            reflectionSequence = []
+            i = 1
+            j = 1
+            for val in comp:
+                i = j
+                j = i + val if (i + val) <= self.degree else 0
+                reflectionSequence.append(Reflection(i, j))
+
+            reflectionSequences.extend(list(itertools.permutations(reflectionSequence)))
+        return reflectionSequences
 
     def applyReflections(self, verbose=0):
         self.log.append(f"Applying Reflections to ${self.point.toTeX()}$ :")
@@ -346,7 +336,7 @@ class ReflectionCalculator:
         return
 
     def makePointsDeterminant(self, verbose=0):
-        self.log.append("Solving for x,y, and z:")
+        self.log.append("Solving for x, y, and z:")
         self.log.append("")
         points = self.log.getPoints()
         newPoints = []
@@ -408,3 +398,5 @@ class CalculationResult:
     def setPoints(self, points):
         self.points = points
         return
+
+
